@@ -66,7 +66,7 @@ print(my_foods)
 print(friend_foods)
 print()
 
-# tuple, tuple和list一样，但是tuple是不可变对象
+# tuple, tuple和list一样也是有序列表，但是tuple是不可变对象
 # 假设有一个长方形，长和宽是固定不变的，可以用tuple来存储长方形的长和宽
 dimensions = (200, 50)
 print(dimensions[0])
