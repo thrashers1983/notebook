@@ -18,6 +18,10 @@ git reset不加--hard详解：
 1. 在当前版本A的工作区和暂存区都clean的情况下如果reset到之前的版本B，会把版本A和版本B做比较，把变更的部分放到工作区
 2. 在当前版本A的工作区有修改的情况下reset到之前的版本B，会把当前版本A和工作区的修改加到一起和版本B做比较，把变更的部分放到工作区
 3. 在当前版本A的暂存区有修改的情况下reset到之前的版本B，会先把暂存区的修改放回工作区，然后把版本A和工作区的修改加到一起和版本B做比较，把变更的部分放到工作区
+4. 在当前版本A的暂存区和工作区都有修改的情况下reset到之前的版本B，会把暂存区和工作区的修改先合并，把合并的结果放回工作区(我做了个实验：先在文件A里添加一行代码，git add放到暂存区，然后删掉文件A，最后git reset HEAD，敲git status看到的是工作区文件A被删除)，然后把版本A和工作区的修改加到一起和版本B做比较，把变更的部分放到工作区
+
+参考文章:  
+[git reset 加不加 --hard的区别](https://www.cnblogs.com/xuLessReigns/p/13714783.html)
 
 git remote -v  
 // 查看远程库信息  
@@ -54,7 +58,7 @@ git checkout dev或者git switch dev
 git checkout -b dev或者git switch -c dev  
 // 创建并切换分支  
 git merge dev  
-// 合并目标分支到当前分支  
+// 合并dev分支到当前分支  
 git branch -d dev  
 // 删除分支  
 git merge --no-ff -m "message" dev  

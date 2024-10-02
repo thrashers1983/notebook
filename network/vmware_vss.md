@@ -10,24 +10,49 @@ vswitch的工作原理：
 
 4. vswitch对广播/组播的处理：
    - 从一个VM发出的广播/组播，会发送到属于同VLAN的port group内的所有VM，也会发送到某一条uplink(不会向所有的uplink泛洪，保证物理交换机只收到一份广播/组播的拷贝)
-   - 从一条uplink收到的广播/组播，会发送到属于同VLAN的port group内的所有VM，不会从其他uplink发出去(这里没有讨论从多条uplink同时收到广播/组播的情况，首先可以肯定的是，这些广播/组播不会又从uplink传回去，但是VM会不会收到重复的广播/组播？)
+   - 从一条uplink收到的广播/组播，会发送到属于同VLAN的port group内的所有VM，不会从其他uplink发出去(如果从多条uplink同时收到相同的广播/组播，GPT4说这种情况下vswitch有工作机制可以确保VM只会收到一份广播/组播，我做过实验也证明了这点)
 
 5. vswitch对未知单播的处理：
-   - 从一个VM发出的未知单播，只会发送到某一条uplink(不会向所有的uplink泛洪)，也不会在vlan内泛洪
-   - 从uplink收到的未知单播，直接丢弃
+   - 从一个VM发出的未知单播，只会发送到某一条uplink(不会向所有的uplink泛洪)，也不会在vlan内泛洪(除非开启杂合模式)
+   - 从uplink收到的未知单播，直接丢弃(除非开启杂合模式)
 
-6. vswitch的uplink会给每个发出去的数据帧打上vlan tag
-   - 如果对端物理交换机接口是access口，access口收到打tag的帧，只要vlan ID和接口vlan一样，就可以正常收，如果收到打tag的帧的vlan ID和接口vlan不一样就丢弃
-   - 如果对端物理交换机接口是trunk，也能正常工作，但是有一个注意点：不能给port group分配和物理交换机trunk的native vlan一样的vlan ID，因为：   
-     - 物理交换机的trunk接口如果收到一个打tag的帧，vlan ID和native vlan一样，则丢弃
-     - 物理交换机trunk上发出的native vlan的帧是不打tag的，vswitch收到不打tag的帧，就会送到vlan ID为0的port group
+6. port group的vlan配置：
+   - Virtual Switch Tagging(VST): vlan ID 1-4094
+     - 这个模式就相当于传统交换机的access接口配了vlan 
+     - 配了相同vlan ID的port group内的VM可以互相通信
+     - 从uplink发出去的数据帧会打上vlan tag
+     - 从trunk port group发出去的数据帧会打上vlan tag
+   - External Switch Tagging(EST): vlan ID 0
+     - 这个模式就相当于传统交换机的access接口没有配vlan
+     - 配了vlan ID为0的port group内的VM可以互相通信
+     - 从uplink发出去的数据帧不打vlan tag
+     - 从trunk port group发出去的数据帧不打vlan tag
+   - Virtual Guest Tagging(VGT): vlan ID 4095
+     - 这个模式就相当于传统交换机配了trunk
+     - VGT的port group内的VM可以和同vlan的VST/EST/VGT的port group内的VM互相通信
+     - 从uplink发出去的数据帧会打上vlan tag
+     - 从其他trunk port group发出去的数据帧会打上vlan tag
+  
+     要想两个端口组二层隔离，需满足以下条件：
+     - 两个VST的port group配了不同的vlan ID
+     - 一个是VST的port group，一个是EST的port group
 
-7. port group的vlan配置：  
-   - vlan ID范围: 1-4094    
-   - vlan ID 0: 配置该端口组不打tag  
-   - vlan ID 4095: 配置该端口组为trunk  
+7. 关于vswitch的uplink的对端物理交换机接口：
+   - 如果对端物理交换机接口是access口：
+     - 收到不打tag的帧(对应EST的port group发出的帧)，则直接进入接口所属vlan，回包也能抵达EST的port group，收发都正常
+     - 收到打tag的帧(对应VST和VGT的port group发出的帧)的vlan ID和接口vlan一样，可以正常接收，但是回包由于不打tag会送到EST的port group，因此无法正常工作
+     - 收到打tag的帧的vlan ID和接口vlan不一样直接丢弃
+  
+     总结：物理交换机access接口只能配合EST的port group使用，也就是vlan直通
 
-    两个端口组如果配置了一样的vlan ID(或者都配0，或者都配4095，或者一个配0一个配4095)，这两个端口组内的VM可以相互通信，要想两个端口组二层隔离，必须两个端口组配不同的vlan ID
+   - 如果对端物理交换机接口是trunk：   
+     - 收到一个不打tag的帧(对应EST的port group发出的帧)，则进入native vlan，回包也不打tag，也能抵达EST的port group，收发都正常
+     - 收到一个打tag的帧(对应VST和VGT的port group发出的帧)的vlan ID和native vlan不一样，则进入相应的vlan，回包也能抵达对应的VST和VGT的port group，收发都正常
+     - 收到一个打tag的帧(对应VST和VGT的port group发出的帧)的vlan ID和native vlan一样，直接丢弃
+  
+     总结：不能给port group分配和物理交换机trunk的native vlan一样的vlan ID
+    
+    注：以上关于第7条的总结也适用于trunk port group接虚拟交换机的场景
 
 ### Security
 杂合模式  
@@ -54,7 +79,7 @@ Both MAC address changes and Forged transmits are set to Reject by default.
 - Route based on source MAC hash  
   基于源MAC负载，如果从某个vNIC发出的流量有很多不同的源MAC，那么这个负载效果就比基于vNIC的要更加均衡，物理交换机接口就配单独的access或者trunk
 - Route based on IP hash  
-  基于源目IP负载，物理交换机接口要配port-channel
+  基于源目IP哈希负载，物理交换机接口要配port-channel(为什么要port channel？因为IP哈希会导致一个源MAC地址的流量从不同的uplink出去，会造成物理交换机MAC地址表翻动，所以必须port-channel，前面两种负载方式一个源MAC地址总是和某一条uplink绑定所以不需要port-channel，另外：vss不支持LACP，物理交换机那头要配channel-group mode on)
 - Use explicit failover order  
   这个策略不是负载均衡，先使用Failover order列表里的Active uplink里的第一个，如果Active uplink都失效了，再使用Standby uplink
 #### Network failover detection
