@@ -153,7 +153,7 @@ for switch in switches[:3]:
     if switch['model'] == '9200':
         switch['model'] = '9300'
         switch['port'] = 24
-        
+
 for switch in switches[:5]:
     print(switch)
 print("...")
@@ -202,7 +202,7 @@ users = {
         'location': 'suzhou',
         },
     }
-    
+
 for username, user_info in users.items():
     print(f"\nUsername: {username}")
     full_name = f"{user_info['first']} {user_info['last']}"
