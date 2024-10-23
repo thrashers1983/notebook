@@ -90,7 +90,7 @@ while current_number < 10:
     print(current_number)
 print()
 
-# 避免无限循环：如果不当心写了无限循环，按ctrl+c退出，或者直接退出terminal
+# 终结无限循环：如果不当心写了无限循环，按ctrl+c退出，或者直接退出terminal
 
 # 列表和字典结合while loop一起使用
 # 把item从一个列表移到另一个列表
