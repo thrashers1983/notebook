@@ -167,7 +167,7 @@ pizza = {
 
 print(f"You ordered a {pizza['crust']}-crust pizza "
     "with the following toppings:")       
-# print换行的语法: 第一行结尾加一个引号，第二行缩进，开头加一个引号
+# print换行的语法: 第一行结尾加一个引号，第二行缩进一个level，开头加一个引号
 for topping in pizza['toppings']:
     print(f"\t{topping}")
 print()
