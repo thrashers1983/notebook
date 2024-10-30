@@ -77,3 +77,110 @@ def build_person(first_name, last_name):
 musician = build_person('jimi', 'hendrix')
 print(musician)
 print()
+
+# 给上面这个函数加一个可选参数
+def build_person(first_name, last_name, age=None):
+    """Return a dictionary of information about a person."""
+    person = {'first': first_name, 'last': last_name}
+    if age:
+        person['age'] = age
+    return person
+
+musician = build_person('jimi', 'hendrix', age=27)
+print(musician)
+print()
+
+# 在while loop里调用函数
+while True:
+    print("\nPlease tell me your name:")
+    print("(enter 'q' at any time to quit)")
+    f_name = input("First name: ")
+    if f_name == 'q':
+        break
+    l_name = input("Last name: ")
+    if l_name == 'q':
+        break
+    formatted_name = get_formatted_name(f_name, l_name)
+    print(f"\nHello, {formatted_name}!")
+print()
+
+# 把列表当作参数传给一个函数
+def greet_users(names):
+    """Print a simple greeting to each user in the list."""
+    for name in names:
+        msg = f"Hello, {name.title()}!"
+        print(msg)
+
+usernames = ['michael', 'tracy', 'kobe']
+greet_users(usernames)
+print()
+
+# 在函数中修改列表
+# 这个例子是模拟3D打印
+def print_models(unprinted_designs, completed_models):
+    """
+    Simulate printing each design, until none are left.
+    Move each design to completed_models after printing.
+    """
+    while unprinted_designs:
+        current_design = unprinted_designs.pop()
+        print(f"Printing model: {current_design}")
+        completed_models.append(current_design)
+
+def show_completed_models(completed_models):
+    """Show all the models that were printed."""
+    print("\nThe following models have been printed:")
+    for completed_model in completed_models:
+        print(completed_model)
+
+unprinted_designs = ['phone case', 'robot pendant', 'dodecahedron']
+completed_models = []
+print_models(unprinted_designs, completed_models)
+show_completed_models(completed_models)
+# 如果想保留原始的unprinted_designs列表，则可以像下面这样写:
+# print_models(unprinted_designs[:], completed_models)
+# 这等于是把原列表做一个拷贝传给了函数，原列表不受影响
+print()
+
+# 传递任意数量的参数
+# 在参数名前加*号，创建一个空的tuple叫toppings，把接受到的所有参数按位置顺序放进这个tuple
+def make_pizza(*toppings):
+    """Print the list of toppings that have been requested."""
+    print(toppings)
+
+make_pizza('pepperoni')
+make_pizza('mushrooms', 'green peppers', 'extra cheese')
+
+def make_pizza(*toppings):
+    """Summarize the pizza we are about to make."""
+    print("\nMaking a pizza with the following toppings:")
+    for topping in toppings:
+        print(f"- {topping}")
+
+make_pizza('pepperoni')
+make_pizza('mushrooms', 'green peppers', 'extra cheese')
+print()
+
+# 如果函数定义中有明确的参数和带*的参数，带*的参数放在最后
+def make_pizza(size, *toppings):
+    """Summarize the pizza we are about to make."""
+    print(f"\nMaking a {size}-inch pizza with the following toppings:")
+    for topping in toppings:
+        print(f"- {topping}")
+
+make_pizza(16, 'pepperoni')
+make_pizza(12, 'mushrooms', 'green peppers', 'extra cheese')
+print()
+
+# 传递任意数量的键值对参数
+# 在参数名前加**，创建一个空字典叫user_info，把接收到的所有命名参数按键值对放进这个字典
+def build_profile(first, last, **user_info):
+    """Build a dictionary containing everything we know about a user."""
+    user_info['first_name'] = first
+    user_info['last_name'] = last
+    return user_info
+
+user_profile = build_profile('albert', 'einstein', location='princeton', field='physics')
+print(user_profile)
+
+# 这章后面有讲到什么是模块和怎么导入模块，我记录到了这两个文件: chapter8_main_program.py和chapter8_modules.py
